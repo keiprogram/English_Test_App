@@ -83,9 +83,12 @@ selected_range = st.sidebar.selectbox("出題範囲", ranges)
 # サイドバーで出題数を選択するスライダーを追加
 st.sidebar.title('出題数を選択してください')
 num_questions = st.sidebar.slider('出題数', min_value=1, max_value=50, value=10)
+<<<<<<< HEAD
 
 # シスタン.xlsxから単語データを読み込む
 words_df = load_data()
+=======
+>>>>>>> 67e28c2 (あｓ)
 
 range_start, range_end = map(int, selected_range.split('-'))
 filtered_words_df = words_df[(words_df['No.'] >= range_start) & (words_df['No.'] <= range_end)].sort_values(by='No.')
