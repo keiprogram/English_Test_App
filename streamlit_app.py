@@ -16,22 +16,22 @@ words_df = load_data()
 
 # UI設定
 st.title("English Vocabulary Test")
-st.caption("アップロードされた単語帳を使った英単語学習アプリ")
+st.caption("アップロードされた単語庫を使った英単語学習アプリ")
 
 # テスト形式選択
-test_type = st.sidebar.radio("テスト形式を選んでください", ["英語→日本語", "日本語→英語"])
+test_type = st.sidebar.radio("Q1. テスト形式を選んでください", ["英語→日本語", "日本語→英語"])
 
-# 範囲指定（No.1~No.100 形式）
+# 範囲指定
 max_no = words_df["No."].max()
 ranges = [(i, i+99) for i in range(1, max_no+1, 100)]
 range_labels = [f"No.{start}~No.{end}" for start, end in ranges]
-selected_range_label = st.sidebar.selectbox("出題範囲を選んでください", range_labels)
+selected_range_label = st.sidebar.selectbox("Q2. 出題範囲を選択", range_labels)
 selected_range = ranges[range_labels.index(selected_range_label)]
 
-# 問題数選択
-num_questions = st.sidebar.slider("出題数", 1, 50, 10)
+# 問題数
+num_questions = st.sidebar.slider("Q3. 出題数", 1, 50, 10)
 
-# テストデータ抽出
+# データ抽出
 filtered_df = words_df[(words_df["No."] >= selected_range[0]) & (words_df["No."] <= selected_range[1])]
 
 # テスト開始
@@ -42,29 +42,25 @@ if st.button("テスト開始"):
     st.session_state.correct = 0
     st.session_state.wrongs = []
 
-# テスト中のロジック
+# テスト中
 if st.session_state.get("test_started", False) and st.session_state.current < len(st.session_state.questions):
     q = st.session_state.questions.iloc[st.session_state.current]
-
-    # 問題と正解
     question_text = q["単語"] if test_type == "英語→日本語" else q["語の意味"]
     correct_answer = q["語の意味"] if test_type == "英語→日本語" else q["単語"]
-
-    # 選択肢生成
+    
     all_choices = filtered_df["語の意味"] if test_type == "英語→日本語" else filtered_df["単語"]
-    options = list(all_choices.sample(3))
-    options.append(correct_answer)
+    options = list(all_choices.sample(3)) + [correct_answer]
     np.random.shuffle(options)
 
     st.subheader(f"Q{st.session_state.current+1}: {question_text}")
-    selected = st.radio("正しい選択肢を選んでください", options, key=st.session_state.current)
-
-    if st.button("回答"):
-        if selected == correct_answer:
-            st.session_state.correct += 1
-        else:
-            st.session_state.wrongs.append((q["No."], q["単語"], q["語の意味"]))
-        st.session_state.current += 1
+    for opt in options:
+        if st.button(opt):
+            if opt == correct_answer:
+                st.session_state.correct += 1
+            else:
+                st.session_state.wrongs.append((q["No."], q["単語"], q["語の意味"]))
+            st.session_state.current += 1
+            st.experimental_rerun()
 
 # 結果表示
 if st.session_state.get("test_started", False) and st.session_state.current >= len(st.session_state.questions):
@@ -78,4 +74,4 @@ if st.session_state.get("test_started", False) and st.session_state.current >= l
         df_wrong = pd.DataFrame(st.session_state.wrongs, columns=["No.", "単語", "語の意味"])
         st.dataframe(df_wrong)
     else:
-        st.write("全問正解です！素晴らしい！")
+        st.write("全問正解です！すばらしい！")
