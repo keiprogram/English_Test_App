@@ -18,7 +18,7 @@ words_df = load_data()
 if 'wrong_answers' not in st.session_state:
     st.session_state.wrong_answers = []
 if 'correct_answers' not in st.session_state:
-    st.session_state.correct_answers = []  # 正解済みの問題を記録
+    st.session_state.correct_answers = []
 if 'test_started' not in st.session_state:
     st.session_state.test_started = False
 
@@ -49,15 +49,26 @@ else:
 if st.button("テスト開始"):
     if test_mode == "間違えた問題" and not st.session_state.wrong_answers:
         st.warning("まだ間違えた問題がありません。通常のテストを行ってください。")
+    elif len(filtered_df) == 0:
+        st.error("選択した範囲に単語がありません。別の範囲を選択してください。")
+    elif len(filtered_df) < num_questions:
+        st.warning(f"選択した範囲の単語数（{len(filtered_df)}語）が指定した出題数（{num_questions}問）より少ないため、{len(filtered_df)}問でテストを開始します。")
+        st.session_state.test_started = True
+        st.session_state.questions = filtered_df.sample(n=len(filtered_df)).reset_index(drop=True)
+        st.session_state.current = 0
+        st.session_state.correct = 0
+        st.session_state.temp_wrongs = []
     else:
         st.session_state.test_started = True
-        st.session_state.questions = filtered_df.sample(n=min(num_questions, len(filtered_df))).reset_index(drop=True)
+        st.session_state.questions = filtered_df.sample(n=num_questions).reset_index(drop=True)
         st.session_state.current = 0
         st.session_state.correct = 0
         st.session_state.temp_wrongs = []
 
 # 回答処理関数
 def answer_question(opt):
+    if st.session_state.current >= len(st.session_state.questions):
+        return  # Prevent index out of bounds
     q = st.session_state.questions.iloc[st.session_state.current]
     correct = q["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else q["単語"]
     if opt == correct:
