@@ -14,12 +14,18 @@ def load_data():
 
 words_df = load_data()
 
+# セッション状態の初期化
+if 'wrong_answers' not in st.session_state:
+    st.session_state.wrong_answers = []
+if 'test_started' not in st.session_state:
+    st.session_state.test_started = False
+
 # UI設定
 st.title("English Vocabulary Test")
 st.caption("アップロードされた単語帳で学ぶ英単語テストアプリ")
 
 # テスト形式選択
-test_type = st.sidebar.radio("テスト形式を選択", ["英語→日本語", "日本語→英語"])
+test_mode = st.sidebar.radio("テスト形式を選択", ["英語→日本語", "日本語→英語", "間違えた問題"])
 
 # 範囲指定 (No.1〜No.100形式)
 max_no = int(words_df["No."].max())
@@ -32,35 +38,46 @@ selected_range = ranges[range_labels.index(selected_label)]
 num_questions = st.sidebar.slider("出題数", 1, 50, 10)
 
 # データ抽出
-filtered_df = words_df[(words_df["No."] >= selected_range[0]) & (words_df["No."] <= selected_range[1])]
+if test_mode == "間違えた問題" and st.session_state.wrong_answers:
+    filtered_df = pd.DataFrame(st.session_state.wrong_answers, columns=["No.", "単語", "語の意味"])
+else:
+    filtered_df = words_df[(words_df["No."] >= selected_range[0]) & (words_df["No."] <= selected_range[1])]
 
 # テスト開始
 if st.sidebar.button("テスト開始"):
-    st.session_state.test_started = True
-    st.session_state.questions = filtered_df.sample(n=min(num_questions, len(filtered_df))).reset_index(drop=True)
-    st.session_state.current = 0
-    st.session_state.correct = 0
-    st.session_state.wrongs = []
+    if test_mode == "間違えた問題" and not st.session_state.wrong_answers:
+        st.warning("まだ間違えた問題がありません。通常のテストを行ってください。")
+    else:
+        st.session_state.test_started = True
+        st.session_state.questions = filtered_df.sample(n=min(num_questions, len(filtered_df))).reset_index(drop=True)
+        st.session_state.current = 0
+        st.session_state.correct = 0
+        st.session_state.temp_wrongs = []
 
 # 回答処理関数
 def answer_question(opt):
     q = st.session_state.questions.iloc[st.session_state.current]
-    correct = q["語の意味"] if test_type == "英語→日本語" else q["単語"]
+    correct = q["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else q["単語"]
     if opt == correct:
         st.session_state.correct += 1
+        # 正解した場合、間違えた問題リストから削除
+        if test_mode == "間違えた問題":
+            wrong_list = st.session_state.wrong_answers
+            st.session_state.wrong_answers = [w for w in wrong_list if w[0] != q["No."]]
     else:
-        st.session_state.wrongs.append((q["No."], q["単語"], q["語の意味"]))
+        st.session_state.temp_wrongs.append((q["No."], q["単語"], q["語の意味"]))
     st.session_state.current += 1
 
 # テスト進行
 if st.session_state.get("test_started", False) and st.session_state.current < len(st.session_state.questions):
     q = st.session_state.questions.iloc[st.session_state.current]
-    question_text = q["単語"] if test_type == "英語→日本語" else q["語の意味"]
-    correct_answer = q["語の意味"] if test_type == "英語→日本語" else q["単語"]
+    question_text = q["単語"] if test_mode in ["英語→日本語", "間違えた問題"] else q["語の意味"]
+    correct_answer = q["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else q["単語"]
     # 選択肢生成
-    pool = filtered_df["語の意味"] if test_type == "英語→日本語" else filtered_df["単語"]
+    pool = filtered_df["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else filtered_df["単語"]
     choices = list(pool.drop_duplicates().sample(min(3, len(pool.drop_duplicates()))))
-    choices.append(correct_answer)
+    if correct_answer not in choices:
+        choices.append(correct_answer)
     np.random.shuffle(choices)
 
     st.subheader(f"問題 {st.session_state.current+1} / {len(st.session_state.questions)}")
@@ -73,11 +90,17 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
 elif st.session_state.get("test_started", False) and st.session_state.current >= len(st.session_state.questions):
     total = len(st.session_state.questions)
     correct = st.session_state.correct
+    # 間違えた問題を永続的に保存
+    for wrong in st.session_state.temp_wrongs:
+        if wrong not in st.session_state.wrong_answers:
+            st.session_state.wrong_answers.append(wrong)
+    
     st.success(f"テスト終了！ 正解数: {correct}/{total}")
     st.progress(correct/total)
-    if st.session_state.wrongs:
-        df_wrong = pd.DataFrame(st.session_state.wrongs, columns=["No.", "単語", "語の意味"])
+    if st.session_state.temp_wrongs:
+        df_wrong = pd.DataFrame(st.session_state.temp_wrongs, columns=["No.", "単語", "語の意味"])
         st.subheader("間違えた問題一覧")
         st.dataframe(df_wrong)
     else:
         st.write("全問正解です！おめでとうございます！")
+    st.session_state.test_started = False
