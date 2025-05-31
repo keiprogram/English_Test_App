@@ -65,6 +65,7 @@ def answer_question(opt):
             wrong_list = st.session_state.wrong_answers
             st.session_state.wrong_answers = [w for w in wrong_list if w[0] != q["No."]]
     else:
+        # "わからない"を選択した場合も間違えた問題として記録
         st.session_state.temp_wrongs.append((q["No."], q["単語"], q["語の意味"]))
     st.session_state.current += 1
 
@@ -78,6 +79,7 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
     choices = list(pool.drop_duplicates().sample(min(3, len(pool.drop_duplicates()))))
     if correct_answer not in choices:
         choices.append(correct_answer)
+    choices.append("わからない")  # 5つ目の選択肢として「わからない」を追加
     np.random.shuffle(choices)
 
     st.subheader(f"問題 {st.session_state.current+1} / {len(st.session_state.questions)}")
