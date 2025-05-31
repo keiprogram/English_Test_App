@@ -17,6 +17,8 @@ words_df = load_data()
 # セッション状態の初期化
 if 'wrong_answers' not in st.session_state:
     st.session_state.wrong_answers = []
+if 'correct_answers' not in st.session_state:
+    st.session_state.correct_answers = []  # 正解済みの問題を記録
 if 'test_started' not in st.session_state:
     st.session_state.test_started = False
 
@@ -60,7 +62,9 @@ def answer_question(opt):
     correct = q["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else q["単語"]
     if opt == correct:
         st.session_state.correct += 1
-        # 正解した場合、間違えた問題リストから削除
+        # 正解した場合、正解リストに追加
+        st.session_state.correct_answers.append((q["No."], q["単語"], q["語の意味"]))
+        # 間違えた問題リストから削除
         if test_mode == "間違えた問題":
             wrong_list = st.session_state.wrong_answers
             st.session_state.wrong_answers = [w for w in wrong_list if w[0] != q["No."]]
@@ -81,16 +85,24 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
     # 正解が選択肢に含まれていない場合、正解を追加
     if correct_answer not in choices:
         choices.append(correct_answer)
-    # 選択肢が4つ未満の場合、プールからランダムに追加
+    # 選択肢が4つ未満の場合、範囲内のデータから補充
     if len(choices) < 4:
         # 既存の選択肢を除外したプールを用意
         remaining_pool = pool[~pool.isin(choices)].drop_duplicates()
         if len(remaining_pool) > 0:
             additional_choices = list(remaining_pool.sample(n=min(4 - len(choices), len(remaining_pool))))
             choices.extend(additional_choices)
+        # それでも足りない場合、正解済みの問題から補充
+        if len(choices) < 4 and st.session_state.correct_answers:
+            correct_df = pd.DataFrame(st.session_state.correct_answers, columns=["No.", "単語", "語の意味"])
+            correct_pool = correct_df["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else correct_df["単語"]
+            remaining_correct_pool = correct_pool[~correct_pool.isin(choices)].drop_duplicates()
+            if len(remaining_correct_pool) > 0:
+                additional_choices = list(remaining_correct_pool.sample(n=min(4 - len(choices), len(remaining_correct_pool))))
+                choices.extend(additional_choices)
         # それでも足りない場合は警告を表示
         if len(choices) < 4:
-            st.warning("選択肢が不足しています。範囲内の単語数が少ないため、選択肢を4つに満たせませんでした。")
+            st.warning("選択肢が不足しています。範囲内の単語数および正解済みの問題が少ないため、選択肢を4つに満たせませんでした。")
     # 「わからない」を追加
     choices.append("わからない")
     np.random.shuffle(choices)
