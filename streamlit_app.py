@@ -37,7 +37,7 @@ selected_label = st.sidebar.selectbox("出題範囲", range_labels)
 selected_range = ranges[range_labels.index(selected_label)]
 
 # 出題数選択
-num_questions = st.sidebar.slider("出題数", 1, 50, 10)
+num_questions = st.sidebar.slider("出題数", 1, 100, 50)
 
 # データ抽出
 if test_mode == "間違えた問題" and st.session_state.wrong_answers:
