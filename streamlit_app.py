@@ -43,8 +43,8 @@ if test_mode == "間違えた問題" and st.session_state.wrong_answers:
 else:
     filtered_df = words_df[(words_df["No."] >= selected_range[0]) & (words_df["No."] <= selected_range[1])]
 
-# テスト開始
-if st.sidebar.button("テスト開始"):
+# テスト開始ボタンをメイン画面に配置
+if st.button("テスト開始"):
     if test_mode == "間違えた問題" and not st.session_state.wrong_answers:
         st.warning("まだ間違えた問題がありません。通常のテストを行ってください。")
     else:
@@ -81,6 +81,8 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
     np.random.shuffle(choices)
 
     st.subheader(f"問題 {st.session_state.current+1} / {len(st.session_state.questions)}")
+    # 進捗バーの追加
+    st.progress((st.session_state.current) / len(st.session_state.questions))
     st.write(question_text)
 
     for opt in choices:
