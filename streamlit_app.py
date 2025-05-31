@@ -76,14 +76,21 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
     correct_answer = q["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else q["単語"]
     # 選択肢生成
     pool = filtered_df["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else filtered_df["単語"]
-    # 正解を除いたプールからランダムに4つの誤答を選択
+    # 正解を除いたプールからランダムに最大4つの誤答を選択
     choices = list(pool[pool != correct_answer].drop_duplicates().sample(n=min(4, len(pool[pool != correct_answer].drop_duplicates()))))
     # 正解が選択肢に含まれていない場合、正解を追加
     if correct_answer not in choices:
         choices.append(correct_answer)
-    # 選択肢が4つ未満の場合、ダミー選択肢を追加
-    while len(choices) < 4:
-        choices.append(f"ダミー選択肢 {len(choices)+1}")
+    # 選択肢が4つ未満の場合、プールからランダムに追加
+    if len(choices) < 4:
+        # 既存の選択肢を除外したプールを用意
+        remaining_pool = pool[~pool.isin(choices)].drop_duplicates()
+        if len(remaining_pool) > 0:
+            additional_choices = list(remaining_pool.sample(n=min(4 - len(choices), len(remaining_pool))))
+            choices.extend(additional_choices)
+        # それでも足りない場合は警告を表示
+        if len(choices) < 4:
+            st.warning("選択肢が不足しています。範囲内の単語数が少ないため、選択肢を4つに満たせませんでした。")
     # 「わからない」を追加
     choices.append("わからない")
     np.random.shuffle(choices)
