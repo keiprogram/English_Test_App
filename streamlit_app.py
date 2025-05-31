@@ -98,7 +98,104 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
 
 # 結果表示
 elif st.session_state.get("test_started", False) and st.session_state.current >= len(st.session_state.questions):
-    total = len(st.session_state.questions)
+    total = len(st.session_state.questionsimport streamlit as st
+import pandas as pd
+import numpy as np
+import random
+
+# データの読み込み
+uploaded_file = "/mnt/data/pass1.xlsx"
+df = pd.read_excel(uploaded_file)
+
+# グループ番号の範囲でフィルタリングする関数
+def get_range_options():
+    max_group = df["Group No."].max()
+    ranges = [(i, min(i + 99, max_group)) for i in range(1, max_group + 1, 100)]
+    return [f"No.{start}~No.{end}" for start, end in ranges]
+
+def filter_df_by_range(selected_range):
+    start, end = map(int, selected_range.replace("No.", "").split("~"))
+    return df[(df["Group No."] >= start) & (df["Group No."] <= end)]
+
+# 初期化
+if "question_index" not in st.session_state:
+    st.session_state.question_index = 0
+if "score" not in st.session_state:
+    st.session_state.score = 0
+if "questions" not in st.session_state:
+    st.session_state.questions = []
+if "options" not in st.session_state:
+    st.session_state.options = []
+if "current_question_data" not in st.session_state:
+    st.session_state.current_question_data = {}
+
+# アプリのタイトル
+st.title("English Vocabulary TEST App")
+
+# 単語範囲選択
+selected_range = st.selectbox("出題範囲を選んでください", get_range_options())
+filtered_words_df = filter_df_by_range(selected_range)
+
+# 出題モード選択
+test_type = st.radio("出題形式を選んでください", ["英語→日本語", "日本語→英語"])
+
+# 問題数の指定
+num_questions = st.slider("出題数を選んでください", min_value=1, max_value=20, value=5)
+
+# 問題のシャッフルと生成
+def generate_questions():
+    sampled = filtered_words_df.sample(n=num_questions).reset_index(drop=True)
+    st.session_state.questions = sampled.to_dict(orient="records")
+    st.session_state.question_index = 0
+    st.session_state.score = 0
+    st.session_state.current_question_data = st.session_state.questions[0]
+    generate_options()
+
+# 選択肢の生成
+def generate_options():
+    current = st.session_state.current_question_data
+    correct = current["語の意味"] if test_type == "英語→日本語" else current["単語"]
+    col = "語の意味" if test_type == "英語→日本語" else "単語"
+    dummy_df = filtered_words_df[filtered_words_df[col] != correct]
+    dummy_options = dummy_df[col].sample(min(3, len(dummy_df))).tolist()
+    options = dummy_options + [correct]
+    random.shuffle(options)
+    st.session_state.options = options
+
+# 回答チェックと次の問題へ
+def check_answer(selected_option):
+    current = st.session_state.current_question_data
+    correct = current["語の意味"] if test_type == "英語→日本語" else current["単語"]
+    if selected_option == correct:
+        st.session_state.score += 1
+        st.success("正解！")
+    else:
+        st.error(f"不正解。正解は {correct} です。")
+    st.session_state.question_index += 1
+    if st.session_state.question_index < len(st.session_state.questions):
+        st.session_state.current_question_data = st.session_state.questions[st.session_state.question_index]
+        generate_options()
+    else:
+        st.balloons()
+
+# テスト開始
+if st.button("テスト開始"):
+    generate_questions()
+
+# テスト実行中の画面
+if st.session_state.questions and st.session_state.question_index < len(st.session_state.questions):
+    current = st.session_state.current_question_data
+    question_text = current["単語"] if test_type == "英語→日本語" else current["語の意味"]
+    st.markdown(f"### Q{st.session_state.question_index + 1}: {question_text}")
+    for option in st.session_state.options:
+        if st.button(option, key=option):
+            check_answer(option)
+            st.experimental_rerun()
+
+# 結果表示
+if st.session_state.question_index >= len(st.session_state.questions) and st.session_state.questions:
+    st.markdown(f"## テスト終了！あなたのスコア: {st.session_state.score} / {num_questions}")
+)
     correct = st.session_state.correct
     # 間違えた問題を永続的に保存
     for wrong in st.session_state.temp_wrongs:
