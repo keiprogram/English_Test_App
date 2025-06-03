@@ -23,7 +23,12 @@ if 'test_started' not in st.session_state:
     st.session_state.test_started = False
 
 # UI設定
-st.title("English Vocabulary Test")
+image_path = os.path.join("img", "pasutann.png")
+if os.path.exists(image_path):
+    st.image(image_path)
+else:
+    st.warning("画像ファイルが見つかりません: " + image_path)
+st.title("準一パス単English Vocabulary Test")
 st.caption("アップロードされた単語帳で学ぶ英単語テストアプリ")
 
 # テスト形式選択
