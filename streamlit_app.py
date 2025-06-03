@@ -29,7 +29,7 @@ if os.path.exists(image_path):
 else:
     st.warning("画像ファイルが見つかりません: " + image_path)
 st.title("準一パス単English Vocabulary Test")
-st.caption("アップロードされた単語帳で学ぶ英単語テストアプリ")
+st.caption("英単語テストアプリ")
 
 # テスト形式選択
 test_mode = st.sidebar.radio("テスト形式を選択", ["英語→日本語", "日本語→英語", "間違えた問題"])
