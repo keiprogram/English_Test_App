@@ -22,12 +22,8 @@ if 'correct_answers' not in st.session_state:
 if 'test_started' not in st.session_state:
     st.session_state.test_started = False
 
-# UI設定
-image_path = os.path.join("img", "pasutann.png")
-if os.path.exists(image_path):
-    st.image(image_path)
-else:
-    st.warning("画像ファイルが見つかりません: " + image_path)
+# UI設定image_path = os.path.join("img", "pasutann.png")
+
 st.title("準一パス単English Vocabulary Test")
 st.caption("英単語テストアプリ")
 
