@@ -6,7 +6,7 @@ import numpy as np
 st.set_page_config(page_title="English Vocabulary Test")
 page_icon="img/eiken rogo.png" 
 
-st.image("img/eiken rogo.png", width=400)  
+st.image("img/eiken rogo.png", width=600)  
 
 # データ読み込み
 @st.cache_data
