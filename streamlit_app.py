@@ -38,9 +38,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("準一パス単English Vocabulary Test")
-st.caption("英単語テストアプリ")
-
+st.title("英検準一級頻出単語用　英単語テスト")
+st.caption("英検準1級 でる順パス単 5訂版に対応")
 # テスト形式選択
 test_mode = st.sidebar.radio("テスト形式を選択", ["英語→日本語", "日本語→英語", "間違えた問題"])
 
