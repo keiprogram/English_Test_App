@@ -22,7 +22,16 @@ if 'correct_answers' not in st.session_state:
 if 'test_started' not in st.session_state:
     st.session_state.test_started = False
 
-# UI設定image_path = os.path.join("img", "pasutann.png")
+# CSS で st.button をカスタマイズ（赤字＋太字）
+st.markdown("""
+    <style>
+    div.stButton > button {
+        color: red !important;
+        font-weight: bold !important;
+        font-size: 18px !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 st.title("準一パス単English Vocabulary Test")
 st.caption("英単語テストアプリ")
@@ -46,7 +55,7 @@ if test_mode == "間違えた問題" and st.session_state.wrong_answers:
 else:
     filtered_df = words_df[(words_df["No."] >= selected_range[0]) & (words_df["No."] <= selected_range[1])]
 
-# テスト開始ボタンをメイン画面に配置
+# テスト開始ボタン
 if st.button("テスト開始"):
     if test_mode == "間違えた問題" and not st.session_state.wrong_answers:
         st.warning("まだ間違えた問題がありません。通常のテストを行ってください。")
@@ -69,19 +78,16 @@ if st.button("テスト開始"):
 # 回答処理関数
 def answer_question(opt):
     if st.session_state.current >= len(st.session_state.questions):
-        return  # Prevent index out of bounds
+        return
     q = st.session_state.questions.iloc[st.session_state.current]
     correct = q["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else q["単語"]
     if opt == correct:
         st.session_state.correct += 1
-        # 正解した場合、正解リストに追加
         st.session_state.correct_answers.append((q["No."], q["単語"], q["語の意味"]))
-        # 間違えた問題リストから削除
         if test_mode == "間違えた問題":
             wrong_list = st.session_state.wrong_answers
             st.session_state.wrong_answers = [w for w in wrong_list if w[0] != q["No."]]
     else:
-        # "わからない"を選択した場合も間違えた問題として記録
         st.session_state.temp_wrongs.append((q["No."], q["単語"], q["語の意味"]))
     st.session_state.current += 1
 
@@ -90,21 +96,16 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
     q = st.session_state.questions.iloc[st.session_state.current]
     question_text = q["単語"] if test_mode in ["英語→日本語", "間違えた問題"] else q["語の意味"]
     correct_answer = q["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else q["単語"]
-    # 選択肢生成
+
     pool = filtered_df["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else filtered_df["単語"]
-    # 正解を除いたプールからランダムに最大4つの誤答を選択
     choices = list(pool[pool != correct_answer].drop_duplicates().sample(n=min(4, len(pool[pool != correct_answer].drop_duplicates()))))
-    # 正解が選択肢に含まれていない場合、正解を追加
     if correct_answer not in choices:
         choices.append(correct_answer)
-    # 選択肢が4つ未満の場合、範囲内のデータから補充
     if len(choices) < 4:
-        # 既存の選択肢を除外したプールを用意
         remaining_pool = pool[~pool.isin(choices)].drop_duplicates()
         if len(remaining_pool) > 0:
             additional_choices = list(remaining_pool.sample(n=min(4 - len(choices), len(remaining_pool))))
             choices.extend(additional_choices)
-        # それでも足りない場合、正解済みの問題から補充
         if len(choices) < 4 and st.session_state.correct_answers:
             correct_df = pd.DataFrame(st.session_state.correct_answers, columns=["No.", "単語", "語の意味"])
             correct_pool = correct_df["語の意味"] if test_mode in ["英語→日本語", "間違えた問題"] else correct_df["単語"]
@@ -112,15 +113,13 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
             if len(remaining_correct_pool) > 0:
                 additional_choices = list(remaining_correct_pool.sample(n=min(4 - len(choices), len(remaining_correct_pool))))
                 choices.extend(additional_choices)
-        # それでも足りない場合は警告を表示
         if len(choices) < 4:
-            st.warning("選択肢が不足しています。範囲内の単語数および正解済みの問題が少ないため、選択肢を4つに満たせませんでした。")
-    # 「わからない」を追加
+            st.warning("選択肢が不足しています。")
+
     choices.append("わからない")
     np.random.shuffle(choices)
 
     st.subheader(f"問題 {st.session_state.current+1} / {len(st.session_state.questions)}")
-    # 進捗バーの追加
     st.progress((st.session_state.current) / len(st.session_state.questions))
     st.write(question_text)
 
@@ -131,7 +130,6 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
 elif st.session_state.get("test_started", False) and st.session_state.current >= len(st.session_state.questions):
     total = len(st.session_state.questions)
     correct = st.session_state.correct
-    # 間違えた問題を永続的に保存
     for wrong in st.session_state.temp_wrongs:
         if wrong not in st.session_state.wrong_answers:
             st.session_state.wrong_answers.append(wrong)
