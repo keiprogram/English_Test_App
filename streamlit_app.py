@@ -129,7 +129,7 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
 
     # 問題文を大きく表示
     st.markdown(
-        f"<div style='font-size:28px; font-weight:bold; color:black;'>{question_text}</div>",
+        f"<div style='font-size:48px; font-weight:bold; color:black;'>{question_text}</div>",
         unsafe_allow_html=True
     )
 
