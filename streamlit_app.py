@@ -22,15 +22,16 @@ if 'correct_answers' not in st.session_state:
 if 'test_started' not in st.session_state:
     st.session_state.test_started = False
 
-# CSS で st.button をカスタマイズ（赤字＋太字）
+# CSS カスタマイズ
 st.markdown("""
     <style>
+    /* ボタンを赤字・太字・大きめ */
     div.stButton > button {
         color: red !important;
         font-weight: bold !important;
         font-size: 18px !important;
     }
-    /* プログレスバーを赤色に統一 */
+    /* プログレスバーを赤色 */
     .stProgress > div > div > div > div {
         background-color: red !important;
     }
@@ -125,7 +126,12 @@ if st.session_state.get("test_started", False) and st.session_state.current < le
 
     st.subheader(f"問題 {st.session_state.current+1} / {len(st.session_state.questions)}")
     st.progress((st.session_state.current) / len(st.session_state.questions))
-    st.write(question_text)
+
+    # 問題文を大きく表示
+    st.markdown(
+        f"<div style='font-size:28px; font-weight:bold; color:black;'>{question_text}</div>",
+        unsafe_allow_html=True
+    )
 
     for opt in choices:
         st.button(opt, on_click=answer_question, args=(opt,))
@@ -140,6 +146,7 @@ elif st.session_state.get("test_started", False) and st.session_state.current >=
     
     st.success(f"テスト終了！ 正解数: {correct}/{total}")
     st.progress(correct/total)
+
     if st.session_state.temp_wrongs:
         df_wrong = pd.DataFrame(st.session_state.temp_wrongs, columns=["No.", "単語", "語の意味"])
         st.subheader("間違えた問題一覧")
