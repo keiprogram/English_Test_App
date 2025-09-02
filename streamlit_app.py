@@ -30,6 +30,10 @@ st.markdown("""
         font-weight: bold !important;
         font-size: 18px !important;
     }
+    /* プログレスバーを赤色に統一 */
+    .stProgress > div > div > div > div {
+        background-color: red !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
