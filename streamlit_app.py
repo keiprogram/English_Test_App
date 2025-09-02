@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 
 # アプリ設定
-st.set_page_config(page_title="English Vocabulary Test", page_icon="📝")
+st.set_page_config(page_title="English Vocabulary Test")
+page_icon="img/eiken rogo.png" 
 
 # データ読み込み
 @st.cache_data
